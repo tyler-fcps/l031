@@ -35,9 +35,7 @@
 
 # Random files
 /.ipynb_checkpoints/*
-output.ppm
-output.jpeg
-output.txt
-points.txt
-log.txt
-output.png
+*.ppm
+*.jpeg
+*.txt
+*.png
