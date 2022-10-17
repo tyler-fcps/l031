@@ -7,10 +7,11 @@
 #include <string>
 #include <iterator>
 #include <list>
+#include <chrono>
 
 using namespace std;
 
-const int SIZE = 60;
+const int SIZE = 1000;
 namespace ppm
 {
     class Image
@@ -191,7 +192,7 @@ namespace gen
         while (true)
         {
             string s;
-            cout << "Do you want to generate 60 points? (Yes/No)" << endl;
+            cout << "Do you want to generate the points? (Yes/No)" << endl;
             cin >> s;
             auto first = toupper(s[0]);
             if (first == 'Y')
@@ -281,14 +282,25 @@ namespace compare
         }
     }
 
-    void part1()
+    long long part1()
     {
         // Read points
         auto points = read_file();
+        // Start timing
+        auto start = chrono::high_resolution_clock::now();
         // Find closest
         Point *p1, *p2;
         find_min_dist(points, &p1, &p2);
-        // Draw them
+        // End timing
+        auto elapsed = chrono::high_resolution_clock::now() - start;
+        // Get length
+        long long microseconds = chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+        // Draw them and output points
+        ofstream results("results.txt");
+        results << fixed << setprecision(10) << "Found Points: (" << p1->xpos() << ", " << p1->ypos() << "), (";
+        results << p2->xpos() << ", " << p2->ypos() << ")" << endl;
+        results << "They have a distance of " << p1->calc_dist(*p2) << endl;
+        results << "It took " << microseconds << " microseconds to calculate" << endl;
         Image output("points.ppm");
         output.fill(255, 255, 255);
         for (auto &point : points)
@@ -305,6 +317,12 @@ namespace compare
             }
         }
         output.output();
+        return microseconds;
+    }
+
+    long long part2()
+    {
+        return 0;
     }
 }
 
@@ -312,7 +330,11 @@ int main()
 {
     gen::part0();
 
-    compare::part1();
+    auto len1 = compare::part1();
+    cout << "Part 1 took " << len1 << " microseconds" << endl;
+
+    auto len2 = compare::part2();
+    cout << "Part 2 took " << len2 << " microseconds" << endl;
 
     return 0;
 }
