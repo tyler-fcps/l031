@@ -2,3 +2,4 @@
 # Runs all .cpp files
 ./a.out
 convert points.ppm points.png
+convert points2.ppm points2.png
