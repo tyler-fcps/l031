@@ -12,7 +12,6 @@
 
 using namespace std;
 
-const int SIZE = 100000;
 namespace ppm
 {
     class Image
@@ -86,7 +85,7 @@ namespace ppm
     private:
         int width;
         int height;
-        std::string name;
+        string name;
         int (*imageData)[800 * 3];
     };
 
@@ -123,6 +122,13 @@ namespace ppm
             dy = this->y - other.ypos();
             dist = sqrt(dx * dx + dy * dy);
             return dist;
+        }
+        double calc_square_dist(Point &other)
+        {
+            double dx, dy;
+            dx = this->x - other.xpos();
+            dy = this->y - other.ypos();
+            return dx * dx + dy * dy;
         }
 
     private:
@@ -211,6 +217,15 @@ namespace gen
         }
     }
 
+    int get_size()
+    {
+        int size;
+        cout << "How many? ";
+        cin >> size;
+        cout << endl;
+        return size;
+    }
+
     void part0()
     {
         // Maybe Gen Points
@@ -222,10 +237,11 @@ namespace gen
         else
         {
             // Gen Points
+            auto size = get_size();
             random_device os_seed;
             mt19937 gen(os_seed());
             uniform_real_distribution<> xy(0, 1);
-            auto points = list<Point>(SIZE, Point());
+            auto points = list<Point>(size, Point());
             for (auto &point : points)
             {
                 point.set_xpos(xy(gen));
@@ -272,7 +288,7 @@ namespace compare
             // Compare
             for (auto it2 = next(it); it2 != points.end(); it2++)
             {
-                auto dist = it->calc_dist(*it2);
+                auto dist = it->calc_square_dist(*it2);
                 if (dist < min_dist)
                 {
                     min_dist = dist;
@@ -283,7 +299,7 @@ namespace compare
         }
     }
 
-    long long part1()
+    long long part1(Point *point1, Point *point2)
     {
         // Read points
         auto points = read_file();
@@ -292,16 +308,13 @@ namespace compare
         // Find closest
         Point *p1, *p2;
         find_min_dist(points, &p1, &p2);
+        *point1 = *p1;
+        *point2 = *p2;
         // End timing
         auto elapsed = chrono::high_resolution_clock::now() - start;
         // Get length
-        long long microseconds = chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
-        // Draw them and output points
-        ofstream results("results.txt");
-        results << fixed << setprecision(10) << "Found Points: (" << p1->xpos() << ", " << p1->ypos() << "), (";
-        results << p2->xpos() << ", " << p2->ypos() << ")" << endl;
-        results << "They have a distance of " << p1->calc_dist(*p2) << endl;
-        results << "It took " << microseconds << " microseconds to calculate" << endl;
+        long long microseconds = chrono::duration_cast<chrono::microseconds>(elapsed).count();
+        // Draw them
         Image output("points.ppm");
         output.fill(255, 255, 255);
         for (auto &point : points)
@@ -332,7 +345,7 @@ namespace compare
         else if (len <= 2)
         {
             // There's 2 points
-            *min_dist = points[0].calc_dist(points[1]);
+            *min_dist = points[0].calc_square_dist(points[1]);
             *p1 = &points[0];
             *p2 = &points[1];
         }
@@ -340,9 +353,9 @@ namespace compare
         {
             // There's 3 points
             double d1, d2, d3;
-            d1 = points[0].calc_dist(points[1]);
-            d2 = points[1].calc_dist(points[2]);
-            d3 = points[2].calc_dist(points[0]);
+            d1 = points[0].calc_square_dist(points[1]);
+            d2 = points[1].calc_square_dist(points[2]);
+            d3 = points[2].calc_square_dist(points[0]);
             // Find min
             if (d1 < d2 && d1 < d3)
             {
@@ -390,7 +403,7 @@ namespace compare
                 }
                 while (j < len && points[j].xpos() < points[len2].xpos() + *min_dist)
                 {
-                    double dist = points[i].calc_dist(points[j]);
+                    double dist = points[i].calc_square_dist(points[j]);
                     if (dist < *min_dist)
                     {
                         *min_dist = dist;
@@ -405,7 +418,7 @@ namespace compare
         }
     }
 
-    long long part2()
+    long long part2(Point *point1, Point *point2)
     {
         // Read points
         auto points_list = read_file();
@@ -421,16 +434,13 @@ namespace compare
         Point *p1, *p2;
         double min_dist;
         split(&points[0], points.size(), &p1, &p2, &min_dist);
+        *point1 = *p1;
+        *point2 = *p2;
         // End timing
         auto elapsed = chrono::high_resolution_clock::now() - start;
         // Get length
-        long long microseconds = chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
-        // Draw them and output points
-        ofstream results("results2.txt");
-        results << fixed << setprecision(10) << "Found Points: (" << p1->xpos() << ", " << p1->ypos() << "), (";
-        results << p2->xpos() << ", " << p2->ypos() << ")" << endl;
-        results << "They have a distance of " << p1->calc_dist(*p2) << endl;
-        results << "It took " << microseconds << " microseconds to calculate" << endl;
+        long long microseconds = chrono::duration_cast<chrono::microseconds>(elapsed).count();
+        // Draw them
         Image output("points2.ppm");
         output.fill(255, 255, 255);
         for (auto &point : points)
@@ -455,12 +465,27 @@ int main()
 {
     gen::part0();
 
-    auto len1 = compare::part1();
-    cout << "Part 1 took " << len1 << " microseconds" << endl
-         << endl;
+    ofstream results("results.txt");
+    ppm::Point p1, p2;
+    char buf[230];
 
-    auto len2 = compare::part2();
-    cout << "Part 2 took " << len2 << " microseconds" << endl;
+    auto len1 = compare::part1(&p1, &p2);
+    sprintf(buf,
+            "Part 1 Found Points: (%.20f, %.20f), (%.20f, %.20f)\n"
+            "They have a distance of: %f\n"
+            "It took %d microseconds to calculate.\n",
+            p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len1);
+    results << buf << endl;
+    cout << buf << endl;
+
+    auto len2 = compare::part2(&p1, &p2);
+    sprintf(buf,
+            "Part 2 Found Points: (%.20f, %.20f), (%.20f, %.20f)\n"
+            "They have a distance of: %f\n"
+            "It took %d microseconds to calculate.\n",
+            p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len2);
+    results << buf;
+    cout << buf;
 
     return 0;
 }
