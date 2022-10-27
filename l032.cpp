@@ -226,6 +226,29 @@ namespace gen
         return size;
     }
 
+    void gen_points(int size)
+    {
+        random_device os_seed;
+        mt19937 gen(os_seed());
+        uniform_real_distribution<> xy(0, 1);
+        auto points = list<Point>(size, Point());
+        for (auto &point : points)
+        {
+            point.set_xpos(xy(gen));
+            point.set_ypos(xy(gen));
+        }
+        // Output to a file
+        ofstream output("points.txt");
+        auto output_point = [&](Point &point)
+        { output << point.xpos() << "  " << point.ypos() << endl; };
+        output << fixed << setprecision(23);
+        for (auto &point : points)
+        {
+            output_point(point);
+        }
+        output.close();
+    }
+
     void part0()
     {
         // Maybe Gen Points
@@ -238,25 +261,7 @@ namespace gen
         {
             // Gen Points
             auto size = get_size();
-            random_device os_seed;
-            mt19937 gen(os_seed());
-            uniform_real_distribution<> xy(0, 1);
-            auto points = list<Point>(size, Point());
-            for (auto &point : points)
-            {
-                point.set_xpos(xy(gen));
-                point.set_ypos(xy(gen));
-            }
-            // Output to a file
-            ofstream output("points.txt");
-            auto output_point = [&](Point &point)
-            { output << point.xpos() << "  " << point.ypos() << endl; };
-            output << fixed << setprecision(23);
-            for (auto &point : points)
-            {
-                output_point(point);
-            }
-            output.close();
+            gen_points(size);
         }
     }
 }
@@ -280,6 +285,26 @@ namespace compare
     }
 
     void find_min_dist(list<Point> &points, Point **p1, Point **p2)
+    {
+        auto min_dist = 2.0;
+
+        for (auto it = points.begin(); it != points.end(); it++)
+        {
+            // Compare
+            for (auto it2 = next(it); it2 != points.end(); it2++)
+            {
+                auto dist = it->calc_square_dist(*it2);
+                if (dist < min_dist)
+                {
+                    min_dist = dist;
+                    *p1 = &*it;
+                    *p2 = &*it2;
+                }
+            }
+        }
+    }
+
+    void find_min_dist_vec(vector<Point> &points, Point **p1, Point **p2)
     {
         auto min_dist = 2.0;
 
@@ -459,10 +484,95 @@ namespace compare
         output.output();
         return microseconds;
     }
+
+    void gen_csv()
+    {
+        ofstream csv("results.csv");
+        csv << "# Of Points;Part1;Part2" << endl;
+        csv << "0;0;0" << endl;
+        random_device os_seed;
+        mt19937 gen(os_seed());
+        uniform_real_distribution<> xy(0, 1);
+        for (int num = 500; num <= 50000; num += 500)
+        {
+            cout << num << "Points... " << endl;
+            /* Gen */
+            auto points = vector<Point>(num, Point());
+            for (auto &point : points)
+            {
+                point.set_xpos(xy(gen));
+                point.set_ypos(xy(gen));
+            }
+            /* Part 1 */
+            // Start timing
+            auto start = chrono::high_resolution_clock::now();
+            // Find closest
+            Point *p1, *p2;
+            find_min_dist_vec(points, &p1, &p2);
+            // End timing
+            auto elapsed = chrono::high_resolution_clock::now() - start;
+            float r1 = chrono::duration_cast<chrono::microseconds>(elapsed).count();
+            /* Part 2 */
+            // Start timing
+            start = chrono::high_resolution_clock::now();
+            // Sort by x coord
+            auto xmax = [](Point &p1, Point &p2)
+            { return p1.xpos() < p2.xpos(); };
+            sort(points.begin(), points.end(), xmax);
+            // Recurse
+            double min_dist;
+            split(&points[0], points.size(), &p1, &p2, &min_dist);
+            // End timing
+            elapsed = chrono::high_resolution_clock::now() - start;
+            float r2 = chrono::duration_cast<chrono::microseconds>(elapsed).count();
+            /* Output */
+            csv << num << ";" << r1 << ";" << r2 << endl;
+        }
+        csv.close();
+    }
+
+    void gen_csv_2_only()
+    {
+        ofstream csv("results.csv");
+        csv << "# Of Points;Part2" << endl;
+        csv << "0;0" << endl;
+        random_device os_seed;
+        mt19937 gen(os_seed());
+        uniform_real_distribution<> xy(0, 1);
+        for (int num = 500; num <= 1000000; num += 500)
+        {
+            cout << num << "Points... " << endl;
+            /* Gen */
+            auto points = vector<Point>(num, Point());
+            for (auto &point : points)
+            {
+                point.set_xpos(xy(gen));
+                point.set_ypos(xy(gen));
+            }
+            /* Part 2 */
+            // Start timing
+            auto start = chrono::high_resolution_clock::now();
+            // Sort by x coord
+            auto xmax = [](Point &p1, Point &p2)
+            { return p1.xpos() < p2.xpos(); };
+            sort(points.begin(), points.end(), xmax);
+            // Recurse
+            Point *p1, *p2;
+            double min_dist;
+            split(&points[0], points.size(), &p1, &p2, &min_dist);
+            // End timing
+            auto elapsed = chrono::high_resolution_clock::now() - start;
+            float r2 = chrono::duration_cast<chrono::microseconds>(elapsed).count();
+            /* Output */
+            csv << num << ";" << r2 << endl;
+        }
+        csv.close();
+    }
 }
 
 int main()
 {
+    // compare::gen_csv();
     gen::part0();
 
     ofstream results("results.txt");
