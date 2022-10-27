@@ -331,7 +331,7 @@ namespace compare
         // Start timing
         auto start = chrono::high_resolution_clock::now();
         // Find closest
-        Point *p1, *p2;
+        Point *p1 = nullptr, *p2 = nullptr;
         find_min_dist(points, &p1, &p2);
         *point1 = *p1;
         *point2 = *p2;
@@ -365,7 +365,6 @@ namespace compare
         if (len <= 1)
         {
             // There's only 1 point, so this shouldn't ever happen
-            int a = 5;
         }
         else if (len <= 2)
         {
@@ -407,8 +406,8 @@ namespace compare
             int len2 = len / 2;
             split(&points[0], len2, p1, p2, min_dist);
             // Split right
-            Point *p3, *p4;
-            double min_dist2;
+            Point *p3 = nullptr, *p4 = nullptr;
+            double min_dist2 = 0;
             split(&points[len2], len - len2, &p3, &p4, &min_dist2);
             // Get min
             if (*min_dist > min_dist2)
