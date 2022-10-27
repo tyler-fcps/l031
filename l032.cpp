@@ -583,7 +583,7 @@ int main()
     sprintf(buf,
             "Part 1 Found Points: (%.20f, %.20f), (%.20f, %.20f)\n"
             "They have a distance of: %f\n"
-            "It took %d microseconds to calculate.\n",
+            "It took %lld microseconds to calculate.\n",
             p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len1);
     results << buf << endl;
     cout << buf << endl;
@@ -592,7 +592,7 @@ int main()
     sprintf(buf,
             "Part 2 Found Points: (%.20f, %.20f), (%.20f, %.20f)\n"
             "They have a distance of: %f\n"
-            "It took %d microseconds to calculate.\n",
+            "It took %lld microseconds to calculate.\n",
             p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len2);
     results << buf;
     cout << buf;
