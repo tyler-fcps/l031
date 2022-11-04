@@ -427,22 +427,26 @@ namespace compare
                 *p2 = p4;
             }
             // Combine middle
-            vector<Point> strip(points, points + len);
-            auto ymax = [](Point &p1, Point &p2)
-            { return p1.ypos() < p2.ypos(); };
-            sort(strip.begin(), strip.end(), ymax);
-            for (int i = 0; i < len; i++)
+            int i = len2;
+            while (i >= 0 && points[i].xpos() > points[len2].xpos() - *min_dist)
             {
-                for (int j = i + 1; j < len && j < i + 16; j++)
+                int j = len2;
+                if (i == j)
                 {
-                    auto dist = strip[i].calc_square_dist(strip[j]);
+                    j++;
+                }
+                while (j < len && points[j].xpos() < points[len2].xpos() + *min_dist)
+                {
+                    double dist = points[i].calc_square_dist(points[j]);
                     if (dist < *min_dist)
                     {
                         *min_dist = dist;
-                        *p1 = strip[i];
-                        *p2 = strip[j];
+                        *p1 = points[i];
+                        *p2 = points[j];
                     }
+                    j++;
                 }
+                i--;
             }
             // Done
         }
@@ -546,13 +550,20 @@ namespace compare
                 *p2 = p4;
             }
             // Combine middle
-            vector<Point> strip(points, points + len);
+            auto max = len2, min = len2 + 1;
+            for (; min > 0 && points[len2].xpos() - points[min].xpos() < *min_dist; min--)
+            {
+                for (; max < len && points[max].xpos() - points[len2].xpos() < *min_dist; max++)
+                {
+                }
+            }
+            vector<Point> strip(&points[min], &points[max]);
             auto ymax = [](Point &p1, Point &p2)
             { return p1.ypos() < p2.ypos(); };
             sort(strip.begin(), strip.end(), ymax);
-            for (int i = 0; i < len; i++)
+            for (int i = 0; i < strip.size(); i++)
             {
-                for (int j = i + 1; j < len && j < i + 16; j++)
+                for (int j = i + 1; j < strip.size() && j < i + 8; j++)
                 {
                     auto dist = strip[i].calc_square_dist(strip[j]);
                     if (dist < *min_dist)
@@ -700,14 +711,14 @@ int main()
     ppm::Point p1, p2;
     char buf[230];
 
-    auto len1 = compare::part1(&p1, &p2);
-    sprintf(buf,
-            "Part 1 Found Points: (%.20f, %.20f), (%.20f, %.20f)\n"
-            "They have a distance of: %f\n"
-            "It took %lld microseconds to calculate.\n",
-            p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len1);
-    results << buf << endl;
-    cout << buf << endl;
+    // auto len1 = compare::part1(&p1, &p2);
+    // sprintf(buf,
+    //         "Part 1 Found Points: (%.20f, %.20f), (%.20f, %.20f)\n"
+    //         "They have a distance of: %f\n"
+    //         "It took %lld microseconds to calculate.\n",
+    //         p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len1);
+    // results << buf << endl;
+    // cout << buf << endl;
 
     auto len2 = compare::part2(&p1, &p2);
     sprintf(buf,
@@ -715,6 +726,15 @@ int main()
             "They have a distance of: %f\n"
             "It took %lld microseconds to calculate.\n",
             p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len2);
+    results << buf << endl;
+    cout << buf << endl;
+
+    auto len3 = compare::part3(&p1, &p2);
+    sprintf(buf,
+            "Part 3 Found Points: (%.20f, %.20f), (%.20f, %.20f)\n"
+            "They have a distance of: %f\n"
+            "It took %lld microseconds to calculate.\n",
+            p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len3);
     results << buf;
     cout << buf;
 
