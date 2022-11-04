@@ -131,6 +131,16 @@ namespace ppm
             return dx * dx + dy * dy;
         }
 
+        bool operator==(const Point &other)
+        {
+            return this->x == other.x && this->y == other.y;
+        }
+
+        bool operator!=(const Point &other)
+        {
+            return !(*this == other);
+        }
+
     private:
         double x, y;
     };
@@ -359,7 +369,7 @@ namespace compare
         return microseconds;
     }
 
-    void split(Point *points, int len, Point **p1, Point **p2, double *min_dist)
+    void split(Point *points, int len, Point *p1, Point *p2, double *min_dist)
     {
         // Ending Condition
         if (len <= 1)
@@ -370,8 +380,8 @@ namespace compare
         {
             // There's 2 points
             *min_dist = points[0].calc_square_dist(points[1]);
-            *p1 = &points[0];
-            *p2 = &points[1];
+            *p1 = points[0];
+            *p2 = points[1];
         }
         else if (len <= 3)
         {
@@ -384,20 +394,20 @@ namespace compare
             if (d1 < d2 && d1 < d3)
             {
                 *min_dist = d1;
-                *p1 = &points[0];
-                *p2 = &points[1];
+                *p1 = points[0];
+                *p2 = points[1];
             }
             else if (d2 < d3)
             {
                 *min_dist = d2;
-                *p1 = &points[1];
-                *p2 = &points[2];
+                *p1 = points[1];
+                *p2 = points[2];
             }
             else
             {
                 *min_dist = d3;
-                *p1 = &points[2];
-                *p2 = &points[0];
+                *p1 = points[2];
+                *p2 = points[0];
             }
         }
         else
@@ -406,7 +416,7 @@ namespace compare
             int len2 = len / 2;
             split(&points[0], len2, p1, p2, min_dist);
             // Split right
-            Point *p3 = nullptr, *p4 = nullptr;
+            Point p3, p4;
             double min_dist2 = 0;
             split(&points[len2], len - len2, &p3, &p4, &min_dist2);
             // Get min
@@ -417,26 +427,22 @@ namespace compare
                 *p2 = p4;
             }
             // Combine middle
-            int i = len2;
-            while (i >= 0 && points[i].xpos() > points[len2].xpos() - *min_dist)
+            vector<Point> strip(points, points + len);
+            auto ymax = [](Point &p1, Point &p2)
+            { return p1.ypos() < p2.ypos(); };
+            sort(strip.begin(), strip.end(), ymax);
+            for (int i = 0; i < len; i++)
             {
-                int j = len2;
-                if (i == j)
+                for (int j = i + 1; j < len && j < i + 16; j++)
                 {
-                    j++;
-                }
-                while (j < len && points[j].xpos() < points[len2].xpos() + *min_dist)
-                {
-                    double dist = points[i].calc_square_dist(points[j]);
+                    auto dist = strip[i].calc_square_dist(strip[j]);
                     if (dist < *min_dist)
                     {
                         *min_dist = dist;
-                        *p1 = &points[i];
-                        *p2 = &points[j];
+                        *p1 = strip[i];
+                        *p2 = strip[j];
                     }
-                    j++;
                 }
-                i--;
             }
             // Done
         }
@@ -455,11 +461,9 @@ namespace compare
         { return p1.xpos() < p2.xpos(); };
         sort(points.begin(), points.end(), xmax);
         // Recurse
-        Point *p1, *p2;
         double min_dist;
-        split(&points[0], points.size(), &p1, &p2, &min_dist);
-        *point1 = *p1;
-        *point2 = *p2;
+        split(&points[0], points.size(), point1, point2, &min_dist);
+
         // End timing
         auto elapsed = chrono::high_resolution_clock::now() - start;
         // Get length
@@ -469,7 +473,125 @@ namespace compare
         output.fill(255, 255, 255);
         for (auto &point : points)
         {
-            if (&point != p1 && &point != p2)
+            if (point != *point1 && point != *point2)
+            {
+                Circle(point.xpos(), point.ypos(), 2.0 / 800.0).draw(output, 0, 0, 0);
+                Circle(point.xpos(), point.ypos(), 3.0 / 800.0).draw(output, 0, 0, 0);
+            }
+            else
+            {
+                Circle(point.xpos(), point.ypos(), 2.0 / 800.0).draw(output, 255, 0, 0);
+                Circle(point.xpos(), point.ypos(), 3.0 / 800.0).draw(output, 255, 0, 0);
+            }
+        }
+        output.output();
+        return microseconds;
+    }
+
+    void split3(Point *points, int len, Point *p1, Point *p2, double *min_dist)
+    {
+        // Ending Condition
+        if (len <= 1)
+        {
+            // There's only 1 point, so this shouldn't ever happen
+        }
+        else if (len <= 2)
+        {
+            // There's 2 points
+            *min_dist = points[0].calc_square_dist(points[1]);
+            *p1 = points[0];
+            *p2 = points[1];
+        }
+        else if (len <= 3)
+        {
+            // There's 3 points
+            double d1, d2, d3;
+            d1 = points[0].calc_square_dist(points[1]);
+            d2 = points[1].calc_square_dist(points[2]);
+            d3 = points[2].calc_square_dist(points[0]);
+            // Find min
+            if (d1 < d2 && d1 < d3)
+            {
+                *min_dist = d1;
+                *p1 = points[0];
+                *p2 = points[1];
+            }
+            else if (d2 < d3)
+            {
+                *min_dist = d2;
+                *p1 = points[1];
+                *p2 = points[2];
+            }
+            else
+            {
+                *min_dist = d3;
+                *p1 = points[2];
+                *p2 = points[0];
+            }
+        }
+        else
+        {
+            // Split Left
+            int len2 = len / 2;
+            split3(&points[0], len2, p1, p2, min_dist);
+            // Split right
+            Point p3, p4;
+            double min_dist2 = 0;
+            split3(&points[len2], len - len2, &p3, &p4, &min_dist2);
+            // Get min
+            if (*min_dist > min_dist2)
+            {
+                *min_dist = min_dist2;
+                *p1 = p3;
+                *p2 = p4;
+            }
+            // Combine middle
+            vector<Point> strip(points, points + len);
+            auto ymax = [](Point &p1, Point &p2)
+            { return p1.ypos() < p2.ypos(); };
+            sort(strip.begin(), strip.end(), ymax);
+            for (int i = 0; i < len; i++)
+            {
+                for (int j = i + 1; j < len && j < i + 16; j++)
+                {
+                    auto dist = strip[i].calc_square_dist(strip[j]);
+                    if (dist < *min_dist)
+                    {
+                        *min_dist = dist;
+                        *p1 = strip[i];
+                        *p2 = strip[j];
+                    }
+                }
+            }
+            // Done
+        }
+    }
+
+    long long part3(Point *point1, Point *point2)
+    {
+        // Read points
+        auto points_list = read_file();
+        // Turn into a vector
+        auto points = vector<Point>(points_list.begin(), points_list.end());
+        // Start timing
+        auto start = chrono::high_resolution_clock::now();
+        // Sort by x coord
+        auto xmax = [](Point &p1, Point &p2)
+        { return p1.xpos() < p2.xpos(); };
+        sort(points.begin(), points.end(), xmax);
+        // Recurse
+        double min_dist;
+        split3(&points[0], points.size(), point1, point2, &min_dist);
+        // End timing
+        auto elapsed = chrono::high_resolution_clock::now() - start;
+        // Get length
+        long long microseconds = chrono::duration_cast<chrono::microseconds>(elapsed).count();
+        // Draw them
+        Image output("points3.ppm");
+        output.fill(255, 255, 255);
+        for (auto &point : points)
+        {
+            if (point != *point1 && point != *point2)
             {
                 Circle(point.xpos(), point.ypos(), 2.0 / 800.0).draw(output, 0, 0, 0);
                 Circle(point.xpos(), point.ypos(), 3.0 / 800.0).draw(output, 0, 0, 0);
@@ -506,8 +628,8 @@ namespace compare
             // Start timing
             auto start = chrono::high_resolution_clock::now();
             // Find closest
-            Point *p1, *p2;
-            find_min_dist_vec(points, &p1, &p2);
+            Point p1, *pp1, p2, *pp2;
+            find_min_dist_vec(points, &pp1, &pp2);
             // End timing
             auto elapsed = chrono::high_resolution_clock::now() - start;
             float r1 = chrono::duration_cast<chrono::microseconds>(elapsed).count();
@@ -556,7 +678,7 @@ namespace compare
             { return p1.xpos() < p2.xpos(); };
             sort(points.begin(), points.end(), xmax);
             // Recurse
-            Point *p1, *p2;
+            Point p1, p2;
             double min_dist;
             split(&points[0], points.size(), &p1, &p2, &min_dist);
             // End timing
