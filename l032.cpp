@@ -204,12 +204,12 @@ namespace gen
 {
     using namespace ppm;
 
-    bool get_answer()
+    bool get_answer(string question)
     {
         while (true)
         {
             string s;
-            cout << "Do you want to generate the points? (Yes/No)" << endl;
+            cout << question << endl;
             cin >> s;
             auto first = toupper(s[0]);
             if (first == 'Y')
@@ -259,13 +259,15 @@ namespace gen
         output.close();
     }
 
-    void part0()
+    bool part0()
     {
+        // Ask if you want to output a PPM
+        auto ppm = get_answer("Do you want to generate the PPM? (Yes/No)");
         // Maybe Gen Points
-        auto gen = get_answer();
+        auto gen = get_answer("Do you want to generate the points? (Yes/No)");
         if (!gen)
         {
-            return;
+            return ppm;
         }
         else
         {
@@ -273,6 +275,7 @@ namespace gen
             auto size = get_size();
             gen_points(size);
         }
+        return ppm;
     }
 }
 
@@ -428,14 +431,14 @@ namespace compare
             }
             // Combine middle
             int i = len2;
-            while (i >= 0 && points[i].xpos() > points[len2].xpos() - *min_dist)
+            while (i >= 0 && points[i].xpos() > points[len2].xpos() - sqrt(*min_dist))
             {
                 int j = len2;
                 if (i == j)
                 {
                     j++;
                 }
-                while (j < len && points[j].xpos() < points[len2].xpos() + *min_dist)
+                while (j < len && points[j].xpos() < points[len2].xpos() + sqrt(*min_dist))
                 {
                     double dist = points[i].calc_square_dist(points[j]);
                     if (dist < *min_dist)
@@ -452,7 +455,7 @@ namespace compare
         }
     }
 
-    long long part2(Point *point1, Point *point2)
+    long long part2(Point *point1, Point *point2, bool output_ppm)
     {
         // Read points
         auto points_list = read_file();
@@ -473,22 +476,25 @@ namespace compare
         // Get length
         long long microseconds = chrono::duration_cast<chrono::microseconds>(elapsed).count();
         // Draw them
-        Image output("points2.ppm");
-        output.fill(255, 255, 255);
-        for (auto &point : points)
+        if (output_ppm)
         {
-            if (point != *point1 && point != *point2)
+            Image output("points2.ppm");
+            output.fill(255, 255, 255);
+            for (auto &point : points)
             {
-                Circle(point.xpos(), point.ypos(), 2.0 / 800.0).draw(output, 0, 0, 0);
-                Circle(point.xpos(), point.ypos(), 3.0 / 800.0).draw(output, 0, 0, 0);
+                if (point != *point1 && point != *point2)
+                {
+                    Circle(point.xpos(), point.ypos(), 2.0 / 800.0).draw(output, 0, 0, 0);
+                    Circle(point.xpos(), point.ypos(), 3.0 / 800.0).draw(output, 0, 0, 0);
+                }
+                else
+                {
+                    Circle(point.xpos(), point.ypos(), 2.0 / 800.0).draw(output, 255, 0, 0);
+                    Circle(point.xpos(), point.ypos(), 3.0 / 800.0).draw(output, 255, 0, 0);
+                }
             }
-            else
-            {
-                Circle(point.xpos(), point.ypos(), 2.0 / 800.0).draw(output, 255, 0, 0);
-                Circle(point.xpos(), point.ypos(), 3.0 / 800.0).draw(output, 255, 0, 0);
-            }
+            output.output();
         }
-        output.output();
         return microseconds;
     }
 
@@ -551,9 +557,9 @@ namespace compare
             }
             // Combine middle
             auto max = len2, min = len2 + 1;
-            for (; min > 0 && points[len2].xpos() - points[min].xpos() < *min_dist; min--)
+            for (; min > 0 && points[len2].xpos() - points[min].xpos() < sqrt(*min_dist); min--)
             {
-                for (; max < len && points[max].xpos() - points[len2].xpos() < *min_dist; max++)
+                for (; max < len && points[max].xpos() - points[len2].xpos() < sqrt(*min_dist); max++)
                 {
                 }
             }
@@ -561,9 +567,9 @@ namespace compare
             auto ymax = [](Point &p1, Point &p2)
             { return p1.ypos() < p2.ypos(); };
             sort(strip.begin(), strip.end(), ymax);
-            for (int i = 0; i < strip.size(); i++)
+            for (unsigned int i = 0; i < strip.size(); i++)
             {
-                for (int j = i + 1; j < strip.size() && j < i + 8; j++)
+                for (unsigned int j = i + 1; j < strip.size() && j < i + 8; j++)
                 {
                     auto dist = strip[i].calc_square_dist(strip[j]);
                     if (dist < *min_dist)
@@ -578,7 +584,7 @@ namespace compare
         }
     }
 
-    long long part3(Point *point1, Point *point2)
+    long long part3(Point *point1, Point *point2, bool output_ppm)
     {
         // Read points
         auto points_list = read_file();
@@ -598,22 +604,25 @@ namespace compare
         // Get length
         long long microseconds = chrono::duration_cast<chrono::microseconds>(elapsed).count();
         // Draw them
-        Image output("points3.ppm");
-        output.fill(255, 255, 255);
-        for (auto &point : points)
+        if (output_ppm)
         {
-            if (point != *point1 && point != *point2)
+            Image output("points3.ppm");
+            output.fill(255, 255, 255);
+            for (auto &point : points)
             {
-                Circle(point.xpos(), point.ypos(), 2.0 / 800.0).draw(output, 0, 0, 0);
-                Circle(point.xpos(), point.ypos(), 3.0 / 800.0).draw(output, 0, 0, 0);
+                if (point != *point1 && point != *point2)
+                {
+                    Circle(point.xpos(), point.ypos(), 2.0 / 800.0).draw(output, 0, 0, 0);
+                    Circle(point.xpos(), point.ypos(), 3.0 / 800.0).draw(output, 0, 0, 0);
+                }
+                else
+                {
+                    Circle(point.xpos(), point.ypos(), 2.0 / 800.0).draw(output, 255, 0, 0);
+                    Circle(point.xpos(), point.ypos(), 3.0 / 800.0).draw(output, 255, 0, 0);
+                }
             }
-            else
-            {
-                Circle(point.xpos(), point.ypos(), 2.0 / 800.0).draw(output, 255, 0, 0);
-                Circle(point.xpos(), point.ypos(), 3.0 / 800.0).draw(output, 255, 0, 0);
-            }
+            output.output();
         }
-        output.output();
         return microseconds;
     }
 
@@ -705,7 +714,7 @@ namespace compare
 int main()
 {
     // compare::gen_csv();
-    gen::part0();
+    auto output_ppm = gen::part0();
 
     ofstream results("results.txt");
     ppm::Point p1, p2;
@@ -720,19 +729,21 @@ int main()
     // results << buf << endl;
     // cout << buf << endl;
 
-    auto len2 = compare::part2(&p1, &p2);
+    auto len2 = compare::part2(&p1, &p2, output_ppm);
     sprintf(buf,
             "Part 2 Found Points: (%.20f, %.20f), (%.20f, %.20f)\n"
-            "They have a distance of: %f\n"
+            "They have a distance of: %e\n"
             "It took %lld microseconds to calculate.\n",
             p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len2);
     results << buf << endl;
     cout << buf << endl;
 
-    auto len3 = compare::part3(&p1, &p2);
+    p1 = ppm::Point(0.0, 0.0);
+    p2 = ppm::Point(0.0, 0.0);
+    auto len3 = compare::part3(&p1, &p2, output_ppm);
     sprintf(buf,
             "Part 3 Found Points: (%.20f, %.20f), (%.20f, %.20f)\n"
-            "They have a distance of: %f\n"
+            "They have a distance of: %e\n"
             "It took %lld microseconds to calculate.\n",
             p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len3);
     results << buf;
