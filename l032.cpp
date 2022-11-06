@@ -418,14 +418,14 @@ namespace compare
             }
             // Combine middle
             int i = len2;
-            while (i >= 0 && points[i].xpos() > points[len2].xpos() - *min_dist)
+            while (i >= 0 && points[i].xpos() > points[len2].xpos() - sqrt(*min_dist))
             {
                 int j = len2;
                 if (i == j)
                 {
                     j++;
                 }
-                while (j < len && points[j].xpos() < points[len2].xpos() + *min_dist)
+                while (j < len && points[j].xpos() < points[len2].xpos() + sqrt(*min_dist))
                 {
                     double dist = points[i].calc_square_dist(points[j]);
                     if (dist < *min_dist)
@@ -578,19 +578,19 @@ int main()
     ppm::Point p1, p2;
     char buf[230];
 
-    auto len1 = compare::part1(&p1, &p2);
-    sprintf(buf,
-            "Part 1 Found Points: (%.20f, %.20f), (%.20f, %.20f)\n"
-            "They have a distance of: %f\n"
-            "It took %lld microseconds to calculate.\n",
-            p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len1);
-    results << buf << endl;
-    cout << buf << endl;
+//     auto len1 = compare::part1(&p1, &p2);
+//     sprintf(buf,
+//             "Part 1 Found Points: (%.20f, %.20f), (%.20f, %.20f)\n"
+//             "They have a distance of: %f\n"
+//             "It took %lld microseconds to calculate.\n",
+//             p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len1);
+//     results << buf << endl;
+//     cout << buf << endl;
 
     auto len2 = compare::part2(&p1, &p2);
     sprintf(buf,
             "Part 2 Found Points: (%.20f, %.20f), (%.20f, %.20f)\n"
-            "They have a distance of: %f\n"
+            "They have a distance of: %e\n"
             "It took %lld microseconds to calculate.\n",
             p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len2);
     results << buf;
