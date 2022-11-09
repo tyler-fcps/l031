@@ -297,7 +297,8 @@ namespace compare
         return ret;
     }
 
-    void find_min_dist(list<Point> &points, Point **p1, Point **p2)
+    template <class T>
+    void find_min_dist(T &points, Point **p1, Point **p2)
     {
         auto min_dist = 2.0;
 
@@ -317,30 +318,9 @@ namespace compare
         }
     }
 
-    void find_min_dist_vec(vector<Point> &points, Point **p1, Point **p2)
+    template <class T>
+    long long time_part1(T &points, Point *point1, Point *point2)
     {
-        auto min_dist = 2.0;
-
-        for (auto it = points.begin(); it != points.end(); it++)
-        {
-            // Compare
-            for (auto it2 = next(it); it2 != points.end(); it2++)
-            {
-                auto dist = it->calc_square_dist(*it2);
-                if (dist < min_dist)
-                {
-                    min_dist = dist;
-                    *p1 = &*it;
-                    *p2 = &*it2;
-                }
-            }
-        }
-    }
-
-    long long part1(Point *point1, Point *point2)
-    {
-        // Read points
-        auto points = read_file();
         // Start timing
         auto start = chrono::high_resolution_clock::now();
         // Find closest
@@ -352,23 +332,35 @@ namespace compare
         auto elapsed = chrono::high_resolution_clock::now() - start;
         // Get length
         long long microseconds = chrono::duration_cast<chrono::microseconds>(elapsed).count();
+        return microseconds;
+    }
+
+    long long part1(Point *point1, Point *point2, bool gen_ppm)
+    {
+        // Read points
+        auto points = read_file();
+        // Get time
+        auto microseconds = time_part1(points, point1, point2);
         // Draw them
-        Image output("points.ppm");
-        output.fill(255, 255, 255);
-        for (auto &point : points)
+        if (gen_ppm)
         {
-            if (&point != p1 && &point != p2)
+            Image output("points.ppm");
+            output.fill(255, 255, 255);
+            for (auto &point : points)
             {
-                Circle(point.xpos(), point.ypos(), 2.0 / 800.0).draw(output, 0, 0, 0);
-                Circle(point.xpos(), point.ypos(), 3.0 / 800.0).draw(output, 0, 0, 0);
+                if (&point != point1 && &point != point2)
+                {
+                    Circle(point.xpos(), point.ypos(), 2.0 / 800.0).draw(output, 0, 0, 0);
+                    Circle(point.xpos(), point.ypos(), 3.0 / 800.0).draw(output, 0, 0, 0);
+                }
+                else
+                {
+                    Circle(point.xpos(), point.ypos(), 2.0 / 800.0).draw(output, 255, 0, 0);
+                    Circle(point.xpos(), point.ypos(), 3.0 / 800.0).draw(output, 255, 0, 0);
+                }
             }
-            else
-            {
-                Circle(point.xpos(), point.ypos(), 2.0 / 800.0).draw(output, 255, 0, 0);
-                Circle(point.xpos(), point.ypos(), 3.0 / 800.0).draw(output, 255, 0, 0);
-            }
+            output.output();
         }
-        output.output();
         return microseconds;
     }
 
@@ -455,12 +447,8 @@ namespace compare
         }
     }
 
-    long long part2(Point *point1, Point *point2, bool output_ppm)
+    long long time_part2(vector<Point> &points, Point *point1, Point *point2)
     {
-        // Read points
-        auto points_list = read_file();
-        // Turn into a vector
-        auto points = vector<Point>(points_list.begin(), points_list.end());
         // Start timing
         auto start = chrono::high_resolution_clock::now();
         // Sort by x coord
@@ -470,11 +458,21 @@ namespace compare
         // Recurse
         double min_dist;
         split(&points[0], points.size(), point1, point2, &min_dist);
-
         // End timing
         auto elapsed = chrono::high_resolution_clock::now() - start;
         // Get length
         long long microseconds = chrono::duration_cast<chrono::microseconds>(elapsed).count();
+        return microseconds;
+    }
+
+    long long part2(Point *point1, Point *point2, bool output_ppm)
+    {
+        // Read points
+        auto points_list = read_file();
+        // Turn into a vector
+        auto points = vector<Point>(points_list.begin(), points_list.end());
+        // Get time
+        auto microseconds = time_part2(points, point1, point2);
         // Draw them
         if (output_ppm)
         {
@@ -584,12 +582,8 @@ namespace compare
         }
     }
 
-    long long part3(Point *point1, Point *point2, bool output_ppm)
+    long long time_part3(vector<Point> &points, Point *point1, Point *point2)
     {
-        // Read points
-        auto points_list = read_file();
-        // Turn into a vector
-        auto points = vector<Point>(points_list.begin(), points_list.end());
         // Start timing
         auto start = chrono::high_resolution_clock::now();
         // Sort by x coord
@@ -603,6 +597,17 @@ namespace compare
         auto elapsed = chrono::high_resolution_clock::now() - start;
         // Get length
         long long microseconds = chrono::duration_cast<chrono::microseconds>(elapsed).count();
+        return microseconds;
+    }
+
+    long long part3(Point *point1, Point *point2, bool output_ppm)
+    {
+        // Read points
+        auto points_list = read_file();
+        // Turn into a vector
+        auto points = vector<Point>(points_list.begin(), points_list.end());
+        // Get time
+        auto microseconds = time_part3(points, point1, point2);
         // Draw them
         if (output_ppm)
         {
@@ -626,7 +631,7 @@ namespace compare
         return microseconds;
     }
 
-    void gen_csv()
+    void gen_csv(bool part1, bool part2, bool part3, bool part4)
     {
         ofstream csv("results.csv");
         csv << "# Of Points;Part1;Part2" << endl;
@@ -637,7 +642,9 @@ namespace compare
         for (int num = 500; num <= 50000; num += 500)
         {
             cout << num << "Points... " << endl;
+            csv << num;
             /* Gen */
+            Point p1, p2;
             auto points = vector<Point>(num, Point());
             for (auto &point : points)
             {
@@ -645,67 +652,25 @@ namespace compare
                 point.set_ypos(xy(gen));
             }
             /* Part 1 */
-            // Start timing
-            auto start = chrono::high_resolution_clock::now();
-            // Find closest
-            Point p1, *pp1, p2, *pp2;
-            find_min_dist_vec(points, &pp1, &pp2);
-            // End timing
-            auto elapsed = chrono::high_resolution_clock::now() - start;
-            float r1 = chrono::duration_cast<chrono::microseconds>(elapsed).count();
-            /* Part 2 */
-            // Start timing
-            start = chrono::high_resolution_clock::now();
-            // Sort by x coord
-            auto xmax = [](Point &p1, Point &p2)
-            { return p1.xpos() < p2.xpos(); };
-            sort(points.begin(), points.end(), xmax);
-            // Recurse
-            double min_dist;
-            split(&points[0], points.size(), &p1, &p2, &min_dist);
-            // End timing
-            elapsed = chrono::high_resolution_clock::now() - start;
-            float r2 = chrono::duration_cast<chrono::microseconds>(elapsed).count();
-            /* Output */
-            csv << num << ";" << r1 << ";" << r2 << endl;
-        }
-        csv.close();
-    }
-
-    void gen_csv_2_only()
-    {
-        ofstream csv("results.csv");
-        csv << "# Of Points;Part2" << endl;
-        csv << "0;0" << endl;
-        random_device os_seed;
-        mt19937 gen(os_seed());
-        uniform_real_distribution<> xy(0, 1);
-        for (int num = 500; num <= 1000000; num += 500)
-        {
-            cout << num << "Points... " << endl;
-            /* Gen */
-            auto points = vector<Point>(num, Point());
-            for (auto &point : points)
+            if (part1)
             {
-                point.set_xpos(xy(gen));
-                point.set_ypos(xy(gen));
+                auto r1 = compare::time_part1(points, &p1, &p2);
+                csv << ";" << r1;
             }
             /* Part 2 */
-            // Start timing
-            auto start = chrono::high_resolution_clock::now();
-            // Sort by x coord
-            auto xmax = [](Point &p1, Point &p2)
-            { return p1.xpos() < p2.xpos(); };
-            sort(points.begin(), points.end(), xmax);
-            // Recurse
-            Point p1, p2;
-            double min_dist;
-            split(&points[0], points.size(), &p1, &p2, &min_dist);
-            // End timing
-            auto elapsed = chrono::high_resolution_clock::now() - start;
-            float r2 = chrono::duration_cast<chrono::microseconds>(elapsed).count();
-            /* Output */
-            csv << num << ";" << r2 << endl;
+            if (part2)
+            {
+                auto r2 = compare::time_part2(points, &p1, &p2);
+                csv << ";" << r2;
+            }
+            /* Part 3 */
+            if (part3)
+            {
+                auto r3 = compare::time_part3(points, &p1, &p2);
+                csv << ";" << r3;
+            }
+            /* Finish Line */
+            csv << endl;
         }
         csv.close();
     }
@@ -713,12 +678,12 @@ namespace compare
 
 int main()
 {
-    // compare::gen_csv();
-    auto output_ppm = gen::part0();
+    compare::gen_csv(false, true, true, true);
+    // auto output_ppm = gen::part0();
 
-    ofstream results("results.txt");
-    ppm::Point p1, p2;
-    char buf[230];
+    // ofstream results("results.txt");
+    // ppm::Point p1, p2;
+    // char buf[230];
 
     // auto len1 = compare::part1(&p1, &p2);
     // sprintf(buf,
@@ -729,25 +694,25 @@ int main()
     // results << buf << endl;
     // cout << buf << endl;
 
-    auto len2 = compare::part2(&p1, &p2, output_ppm);
-    sprintf(buf,
-            "Part 2 Found Points: (%.20f, %.20f), (%.20f, %.20f)\n"
-            "They have a distance of: %e\n"
-            "It took %lld microseconds to calculate.\n",
-            p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len2);
-    results << buf << endl;
-    cout << buf << endl;
+    // auto len2 = compare::part2(&p1, &p2, output_ppm);
+    // sprintf(buf,
+    //         "Part 2 Found Points: (%.20f, %.20f), (%.20f, %.20f)\n"
+    //         "They have a distance of: %e\n"
+    //         "It took %lld microseconds to calculate.\n",
+    //         p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len2);
+    // results << buf << endl;
+    // cout << buf << endl;
 
-    p1 = ppm::Point(0.0, 0.0);
-    p2 = ppm::Point(0.0, 0.0);
-    auto len3 = compare::part3(&p1, &p2, output_ppm);
-    sprintf(buf,
-            "Part 3 Found Points: (%.20f, %.20f), (%.20f, %.20f)\n"
-            "They have a distance of: %e\n"
-            "It took %lld microseconds to calculate.\n",
-            p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len3);
-    results << buf;
-    cout << buf;
+    // p1 = ppm::Point(0.0, 0.0);
+    // p2 = ppm::Point(0.0, 0.0);
+    // auto len3 = compare::part3(&p1, &p2, output_ppm);
+    // sprintf(buf,
+    //         "Part 3 Found Points: (%.20f, %.20f), (%.20f, %.20f)\n"
+    //         "They have a distance of: %e\n"
+    //         "It took %lld microseconds to calculate.\n",
+    //         p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len3);
+    // results << buf;
+    // cout << buf;
 
     return 0;
 }
