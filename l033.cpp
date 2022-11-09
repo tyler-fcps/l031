@@ -656,18 +656,21 @@ namespace compare
         random_device os_seed;
         mt19937 gen(os_seed());
         uniform_real_distribution<> xy(0, 1);
-        for (int num = 500; num <= 50000; num += 500)
+        auto num = 1000000;
+        auto points_all = vector<Point>(num, Point());
+        for (auto &point : points_all)
         {
-            cout << num << "Points... " << endl;
-            csv << num;
+            point.set_xpos(xy(gen));
+            point.set_ypos(xy(gen));
+        }
+        auto incr = 10000;
+        for (int count = incr; count <= num; count += incr)
+        {
+            cout << count << " Points... " << endl;
+            csv << count;
             /* Gen */
             Point p1, p2;
-            auto points = vector<Point>(num, Point());
-            for (auto &point : points)
-            {
-                point.set_xpos(xy(gen));
-                point.set_ypos(xy(gen));
-            }
+            auto points = vector<Point>(points_all.begin(), points_all.begin() + count);
             /* Part 1 */
             if (part1)
             {
