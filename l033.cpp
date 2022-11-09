@@ -634,7 +634,7 @@ namespace compare
     void gen_csv(bool part1, bool part2, bool part3, bool part4)
     {
         ofstream csv("results.csv");
-        csv << "# Of Points" << endl;
+        csv << "# Of Points";
         if (part1)
         {
             csv << ";part1";
@@ -651,7 +651,8 @@ namespace compare
         {
             csv << ";part4";
         }
-        csv << "0;0;0" << endl;
+        csv << endl
+            << "0;0;0" << endl;
         random_device os_seed;
         mt19937 gen(os_seed());
         uniform_real_distribution<> xy(0, 1);
