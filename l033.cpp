@@ -634,7 +634,23 @@ namespace compare
     void gen_csv(bool part1, bool part2, bool part3, bool part4)
     {
         ofstream csv("results.csv");
-        csv << "# Of Points;Part1;Part2" << endl;
+        csv << "# Of Points" << endl;
+        if (part1)
+        {
+            csv << ";part1";
+        }
+        if (part2)
+        {
+            csv << ";part2";
+        }
+        if (part3)
+        {
+            csv << ";part3";
+        }
+        if (part4)
+        {
+            csv << ";part4";
+        }
         csv << "0;0;0" << endl;
         random_device os_seed;
         mt19937 gen(os_seed());
