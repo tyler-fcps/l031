@@ -9,6 +9,8 @@
 #include <list>
 #include <algorithm>
 #include <chrono>
+#include <unordered_map>
+#include <utility>
 
 using namespace std;
 
@@ -631,6 +633,101 @@ namespace compare
         return microseconds;
     }
 
+    long long time_part4(vector<Point> &points, Point *p1, Point *p2)
+    {
+        // Start timing
+        auto start = chrono::high_resolution_clock::now();
+        // Make map with enough space for all points
+        class Hash
+        {
+        public:
+            size_t operator()(const pair<long long, long long> &key) const
+            {
+                auto first = hash<long long>{}(key.first);
+                auto second = hash<long long>{}(key.second);
+                if (first != second)
+                {
+                    return first ^ second;
+                }
+                return first;
+            }
+        };
+        unordered_map<pair<long long, long long>, Point, Hash> map(points.size());
+        // Set initial variables
+        double min_dist = 1.0;
+        auto insert_point = [&](Point point)
+        { map[make_pair(point.xpos() * 2.0 / min_dist, point.ypos() * 2.0 / min_dist)] = point; };
+        // Start iteration
+        for (Point &point : points)
+        {
+            // Check surrounding squares
+            long long i = point.xpos() * 2.0 / min_dist;
+            long long j = point.ypos() * 2.0 / min_dist;
+            double new_min_dist = 1.0;
+            for (long long x = -2; x <= 2; x++)
+            {
+                for (long long y = -2; y <= 2; y++)
+                {
+                    if (map.find(make_pair(i + x, j + y)) != map.end())
+                    {
+                        auto p = map[make_pair(i + x, j + y)];
+                        new_min_dist = point.calc_dist(p);
+                        *p1 = point;
+                        *p2 = p;
+                    }
+                }
+            }
+            // Maybe rehash stuff
+            if (new_min_dist < min_dist)
+            {
+                min_dist = new_min_dist;
+                map.clear();
+                for (auto it = points.begin(); *it != point; it++)
+                {
+                    insert_point(*it);
+                }
+            }
+            // Insert new point
+            insert_point(point);
+        }
+        // End timing
+        auto elapsed = chrono::high_resolution_clock::now() - start;
+        // Get length
+        long long microseconds = chrono::duration_cast<chrono::microseconds>(elapsed).count();
+        return microseconds;
+    }
+
+    long long part4(Point *point1, Point *point2, bool output_ppm)
+    {
+        // Read points
+        auto points_list = read_file();
+        // Turn into a vector
+        auto points = vector<Point>(points_list.begin(), points_list.end());
+        // Get time
+        auto microseconds = time_part4(points, point1, point2);
+        // Draw them
+        if (output_ppm)
+        {
+            Image output("points4.ppm");
+            output.fill(255, 255, 255);
+            for (auto &point : points)
+            {
+                if (point != *point1 && point != *point2)
+                {
+                    Circle(point.xpos(), point.ypos(), 2.0 / 800.0).draw(output, 0, 0, 0);
+                    Circle(point.xpos(), point.ypos(), 3.0 / 800.0).draw(output, 0, 0, 0);
+                }
+                else
+                {
+                    Circle(point.xpos(), point.ypos(), 2.0 / 800.0).draw(output, 255, 0, 0);
+                    Circle(point.xpos(), point.ypos(), 3.0 / 800.0).draw(output, 255, 0, 0);
+                }
+            }
+            output.output();
+        }
+        return microseconds;
+    }
+
     void gen_csv(bool part1, bool part2, bool part3, bool part4)
     {
         ofstream csv("results.csv");
@@ -656,14 +753,14 @@ namespace compare
         random_device os_seed;
         mt19937 gen(os_seed());
         uniform_real_distribution<> xy(0, 1);
-        auto num = 1000000;
+        auto num = 50000000;
         auto points_all = vector<Point>(num, Point());
         for (auto &point : points_all)
         {
             point.set_xpos(xy(gen));
             point.set_ypos(xy(gen));
         }
-        auto incr = 10000;
+        auto incr = 1000000;
         for (int count = incr; count <= num; count += incr)
         {
             cout << count << " Points... " << endl;
@@ -689,6 +786,12 @@ namespace compare
                 auto r3 = compare::time_part3(points, &p1, &p2);
                 csv << ";" << r3;
             }
+            /* Part 4 */
+            if (part4)
+            {
+                auto r4 = compare::time_part4(points, &p1, &p2);
+                csv << ";" << r4;
+            }
             /* Finish Line */
             csv << endl;
         }
@@ -698,8 +801,8 @@ namespace compare
 
 int main()
 {
-    compare::gen_csv(false, true, true, true);
-    // auto output_ppm = gen::part0();
+    compare::gen_csv(false, false, true, true);
+    // bool output_ppm = gen::part0();
 
     // ofstream results("results.txt");
     // ppm::Point p1, p2;
@@ -714,6 +817,8 @@ int main()
     // results << buf << endl;
     // cout << buf << endl;
 
+    // p1 = ppm::Point(0.0, 0.0);
+    // p2 = ppm::Point(0.0, 0.0);
     // auto len2 = compare::part2(&p1, &p2, output_ppm);
     // sprintf(buf,
     //         "Part 2 Found Points: (%.20f, %.20f), (%.20f, %.20f)\n"
@@ -731,6 +836,17 @@ int main()
     //         "They have a distance of: %e\n"
     //         "It took %lld microseconds to calculate.\n",
     //         p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len3);
+    // results << buf;
+    // cout << buf;
+
+    // p1 = ppm::Point(0.0, 0.0);
+    // p2 = ppm::Point(0.0, 0.0);
+    // auto len4 = compare::part4(&p1, &p2, output_ppm);
+    // sprintf(buf,
+    //         "Part 4 Found Points: (%.20f, %.20f), (%.20f, %.20f)\n"
+    //         "They have a distance of: %e\n"
+    //         "It took %lld microseconds to calculate.\n",
+    //         p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len4);
     // results << buf;
     // cout << buf;
 
