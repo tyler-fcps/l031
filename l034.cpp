@@ -637,19 +637,21 @@ namespace compare
     {
         // Start timing
         auto start = chrono::high_resolution_clock::now();
+        // Shuffle points
+        for (unsigned int i = 0; i < points.size() - 1; i++)
+        {
+            int to_swap = (rand() % (points.size() - i - 1)) + i + 1;
+            swap(points[i], points[to_swap]);
+        }
         // Make map with enough space for all points
         class Hash
         {
         public:
             size_t operator()(const pair<long long, long long> &key) const
             {
-                auto first = hash<long long>{}(key.first);
-                auto second = hash<long long>{}(key.second);
-                if (first != second)
-                {
-                    return first ^ second;
-                }
-                return first;
+                auto x = hash<long long>{}(key.first);
+                auto y = hash<long long>{}(key.second);
+                return ((x + y) * (x + y + 1) / 2) + y;
             }
         };
         unordered_map<pair<long long, long long>, Point, Hash> map(points.size());
@@ -658,8 +660,9 @@ namespace compare
         auto insert_point = [&](Point point)
         { map[make_pair(point.xpos() * 2.0 / min_dist, point.ypos() * 2.0 / min_dist)] = point; };
         // Start iteration
-        for (Point &point : points)
+        for (long long a = 0; a < (long long)points.size(); a++)
         {
+            Point &point = points[a];
             // Check surrounding squares
             long long i = point.xpos() * 2.0 / min_dist;
             long long j = point.ypos() * 2.0 / min_dist;
@@ -671,9 +674,13 @@ namespace compare
                     if (map.find(make_pair(i + x, j + y)) != map.end())
                     {
                         auto p = map[make_pair(i + x, j + y)];
-                        new_min_dist = point.calc_dist(p);
-                        *p1 = point;
-                        *p2 = p;
+                        auto dist = point.calc_dist(p);
+                        if (dist < min_dist)
+                        {
+                            *p1 = point;
+                            *p2 = p;
+                            new_min_dist = dist;
+                        }
                     }
                 }
             }
@@ -682,9 +689,9 @@ namespace compare
             {
                 min_dist = new_min_dist;
                 map.clear();
-                for (auto it = points.begin(); *it != point; it++)
+                for (long long b = 0; b < a; b++)
                 {
-                    insert_point(*it);
+                    insert_point(points[b]);
                 }
             }
             // Insert new point
