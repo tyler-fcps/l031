@@ -125,13 +125,6 @@ namespace ppm
             dist = sqrt(dx * dx + dy * dy);
             return dist;
         }
-        double calc_square_dist(Point &other)
-        {
-            double dx, dy;
-            dx = this->x - other.xpos();
-            dy = this->y - other.ypos();
-            return dx * dx + dy * dy;
-        }
 
         bool operator==(const Point &other)
         {
@@ -309,7 +302,7 @@ namespace compare
             // Compare
             for (auto it2 = next(it); it2 != points.end(); it2++)
             {
-                auto dist = it->calc_square_dist(*it2);
+                auto dist = it->calc_dist(*it2);
                 if (dist < min_dist)
                 {
                     min_dist = dist;
@@ -372,11 +365,12 @@ namespace compare
         if (len <= 1)
         {
             // There's only 1 point, so this shouldn't ever happen
+            int a = *(int *)0x0;
         }
         else if (len <= 2)
         {
             // There's 2 points
-            *min_dist = points[0].calc_square_dist(points[1]);
+            *min_dist = points[0].calc_dist(points[1]);
             *p1 = points[0];
             *p2 = points[1];
         }
@@ -384,9 +378,9 @@ namespace compare
         {
             // There's 3 points
             double d1, d2, d3;
-            d1 = points[0].calc_square_dist(points[1]);
-            d2 = points[1].calc_square_dist(points[2]);
-            d3 = points[2].calc_square_dist(points[0]);
+            d1 = points[0].calc_dist(points[1]);
+            d2 = points[1].calc_dist(points[2]);
+            d3 = points[2].calc_dist(points[0]);
             // Find min
             if (d1 < d2 && d1 < d3)
             {
@@ -434,7 +428,7 @@ namespace compare
                 }
                 while (j < len && points[j].xpos() < points[len2].xpos() + sqrt(*min_dist))
                 {
-                    double dist = points[i].calc_square_dist(points[j]);
+                    double dist = points[i].calc_dist(points[j]);
                     if (dist < *min_dist)
                     {
                         *min_dist = dist;
@@ -508,7 +502,7 @@ namespace compare
         else if (len <= 2)
         {
             // There's 2 points
-            *min_dist = points[0].calc_square_dist(points[1]);
+            *min_dist = points[0].calc_dist(points[1]);
             *p1 = points[0];
             *p2 = points[1];
         }
@@ -516,9 +510,9 @@ namespace compare
         {
             // There's 3 points
             double d1, d2, d3;
-            d1 = points[0].calc_square_dist(points[1]);
-            d2 = points[1].calc_square_dist(points[2]);
-            d3 = points[2].calc_square_dist(points[0]);
+            d1 = points[0].calc_dist(points[1]);
+            d2 = points[1].calc_dist(points[2]);
+            d3 = points[2].calc_dist(points[0]);
             // Find min
             if (d1 < d2 && d1 < d3)
             {
@@ -571,7 +565,7 @@ namespace compare
             {
                 for (unsigned int j = i + 1; j < strip.size() && j < i + 8; j++)
                 {
-                    auto dist = strip[i].calc_square_dist(strip[j]);
+                    auto dist = strip[i].calc_dist(strip[j]);
                     if (dist < *min_dist)
                     {
                         *min_dist = dist;
@@ -760,14 +754,14 @@ namespace compare
         random_device os_seed;
         mt19937 gen(os_seed());
         uniform_real_distribution<> xy(0, 1);
-        auto num = 50000000;
+        auto num = 1000000;
         auto points_all = vector<Point>(num, Point());
         for (auto &point : points_all)
         {
             point.set_xpos(xy(gen));
             point.set_ypos(xy(gen));
         }
-        auto incr = 1000000;
+        auto incr = 10000;
         for (int count = incr; count <= num; count += incr)
         {
             cout << count << " Points... " << endl;
@@ -808,17 +802,19 @@ namespace compare
 
 int main()
 {
-    compare::gen_csv(false, false, true, true);
-    // bool output_ppm = gen::part0();
+    // compare::gen_csv(false, false, true, true);
+    bool output_ppm = gen::part0();
 
-    // ofstream results("results.txt");
-    // ppm::Point p1, p2;
-    // char buf[230];
+    ofstream results("results.txt");
+    ppm::Point p1, p2;
+    char buf[400];
 
-    // auto len1 = compare::part1(&p1, &p2);
+    // p1 = ppm::Point(0.0, 0.0);
+    // p2 = ppm::Point(0.0, 0.0);
+    // auto len1 = compare::part1(&p1, &p2, output_ppm);
     // sprintf(buf,
-    //         "Part 1 Found Points: (%.20f, %.20f), (%.20f, %.20f)\n"
-    //         "They have a distance of: %f\n"
+    //         "Part 1 Found Points: (%.30f, %.30f), (%.30f, %.30f)\n"
+    //         "They have a distance of: %.30e\n"
     //         "It took %lld microseconds to calculate.\n",
     //         p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len1);
     // results << buf << endl;
@@ -828,34 +824,34 @@ int main()
     // p2 = ppm::Point(0.0, 0.0);
     // auto len2 = compare::part2(&p1, &p2, output_ppm);
     // sprintf(buf,
-    //         "Part 2 Found Points: (%.20f, %.20f), (%.20f, %.20f)\n"
-    //         "They have a distance of: %e\n"
+    //         "Part 2 Found Points: (%.30f, %.30f), (%.30f, %.30f)\n"
+    //         "They have a distance of: %.30e\n"
     //         "It took %lld microseconds to calculate.\n",
     //         p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len2);
     // results << buf << endl;
     // cout << buf << endl;
 
-    // p1 = ppm::Point(0.0, 0.0);
-    // p2 = ppm::Point(0.0, 0.0);
-    // auto len3 = compare::part3(&p1, &p2, output_ppm);
-    // sprintf(buf,
-    //         "Part 3 Found Points: (%.20f, %.20f), (%.20f, %.20f)\n"
-    //         "They have a distance of: %e\n"
-    //         "It took %lld microseconds to calculate.\n",
-    //         p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len3);
-    // results << buf;
-    // cout << buf;
+    p1 = ppm::Point(0.0, 0.0);
+    p2 = ppm::Point(0.0, 0.0);
+    auto len3 = compare::part3(&p1, &p2, output_ppm);
+    sprintf(buf,
+            "Part 3 Found Points: (%.30f, %.30f), (%.30f, %.30f)\n"
+            "They have a distance of: %.30e\n"
+            "It took %lld microseconds to calculate.\n",
+            p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len3);
+    results << buf << endl;
+    cout << buf << endl;
 
-    // p1 = ppm::Point(0.0, 0.0);
-    // p2 = ppm::Point(0.0, 0.0);
-    // auto len4 = compare::part4(&p1, &p2, output_ppm);
-    // sprintf(buf,
-    //         "Part 4 Found Points: (%.20f, %.20f), (%.20f, %.20f)\n"
-    //         "They have a distance of: %e\n"
-    //         "It took %lld microseconds to calculate.\n",
-    //         p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len4);
-    // results << buf;
-    // cout << buf;
+    p1 = ppm::Point(0.0, 0.0);
+    p2 = ppm::Point(0.0, 0.0);
+    auto len4 = compare::part4(&p1, &p2, output_ppm);
+    sprintf(buf,
+            "Part 4 Found Points: (%.30f, %.30f), (%.30f, %.30f)\n"
+            "They have a distance of: %.30e\n"
+            "It took %lld microseconds to calculate.\n",
+            p1.xpos(), p1.ypos(), p2.xpos(), p2.ypos(), p1.calc_dist(p2), len4);
+    results << buf << endl;
+    cout << buf << endl;
 
     return 0;
 }
