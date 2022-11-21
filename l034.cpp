@@ -365,7 +365,6 @@ namespace compare
         if (len <= 1)
         {
             // There's only 1 point, so this shouldn't ever happen
-            int a = *(int *)0x0;
         }
         else if (len <= 2)
         {
